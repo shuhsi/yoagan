@@ -1,35 +1,32 @@
 import streamlit as st
-from ultralytics import YOLO
+from ultralytics import YOLO  # 假设用 YOLO 模型
+import cv2
 import numpy as np
-from PIL import Image
-import io
 
-# 加载模型（与app.py同目录）
-model = YOLO("building_best_seg_t4.pt")
+# 1. 页面标题
+st.title("屋顶分割模型演示")
 
-st.title("屋顶分割工具")
-uploaded_file = st.file_uploader("选择图像", type=["jpg", "jpeg", "png"])
+# 2. 加载模型（注意模型在 GitHub 中的相对路径）
+@st.cache_resource  # 缓存模型，避免重复加载
+def load_model():
+    model = YOLO("building_best_seg_t4.pt")  # 模型文件名需与 GitHub 中一致
+    return model
 
+model = load_model()
+
+# 3. 上传图片功能
+uploaded_file = st.file_uploader("上传图片", type=["jpg", "png"])
+
+# 4. 预测与显示结果
 if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    img_np = np.array(image)
-    st.subheader("原始图像")
-    st.image(image, use_column_width=True)
-
-    with st.spinner("分割中..."):
-        results = model(img_np, imgsz=640, conf=0.3)
-        res_plotted = results[0].plot(masks=True)
-        res_image = Image.fromarray(res_plotted[..., ::-1])
-
-    st.subheader("分割结果")
-    st.image(res_image, use_column_width=True)
-
-    # 保存按钮
-    buf = io.BytesIO()
-    res_image.save(buf, format="PNG")
-    st.download_button(
-        "保存结果",
-        buf.getvalue(),
-        "roof_result.png",
-        "image/png"
-    )
+    # 读取图片
+    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+    img = cv2.imdecode(file_bytes, 1)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # 转 RGB 格式
+    
+    # 模型预测
+    results = model(img)
+    
+    # 显示结果
+    st.subheader("预测结果")
+    st.image(results[0].plot(), caption="分割效果", use_column_width=True)
