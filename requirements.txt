@@ -1,0 +1,4 @@
+streamlit==1.32.2  # Streamlit 版本（指定版本更稳定）
+ultralytics==8.1.32  # 模型依赖（根据你的 YOLO 版本调整）
+opencv-python==4.9.0.80  # 图像处理
+numpy==1.26.4  # 数组处理
